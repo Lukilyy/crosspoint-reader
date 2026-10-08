@@ -40,6 +40,18 @@
 #include "util/ScreenshotUtil.h"
 #include "util/Timezones.h"
 
+#if FREEINK_DEVICE_STICKY
+extern "C" void freeink_board_sticky_display_trace(const char* phase, uint8_t value, bool hasValue, bool error) {
+  if (error) {
+    LOG_ERR("EPD", "%s", phase);
+  } else if (hasValue) {
+    LOG_INF("EPD", "%s: 0x%02X", phase, value);
+  } else {
+    LOG_INF("EPD", "%s", phase);
+  }
+}
+#endif
+
 #if CROSSPOINT_VECTOR_FONTS
 // Rendering (incl. FreeType TTF rasterization) runs on the Arduino loop task.
 // The default 8 KB stack overflows inside FreeType's FT_Open_Face / variable-font
@@ -314,7 +326,15 @@ void setupDisplayAndFonts(bool seamless = false) {
   }
 #endif
 
+#if FREEINK_DEVICE_STICKY
+  LOG_INF("MAIN", "Initializing Sticky display");
+#endif
   display.begin(seamless);
+#if FREEINK_DEVICE_STICKY
+  LOG_INF("MAIN", "Sticky panel: %s (ID 0x%02X)",
+          BoardConfig::ACTIVE.displayController == BoardConfig::DisplayController::SSD2677 ? "SSD2677" : "SSD1677",
+          BoardConfig::ACTIVE.displayControllerVariant);
+#endif
   renderer.begin();
   activityManager.begin();
   LOG_DBG("MAIN", "Display initialized");
